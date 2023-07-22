@@ -1,7 +1,7 @@
-import _, { keys } from "lodash";
-import LiveFlight from "../types/RadarBox/LiveFlight";
-import FlightPosition from "../types/RadarBox/FlightPosition";
-import FlightInfo from "../types/RadarBox/FlightInfo";
+import _, { keys } from 'lodash';
+import LiveFlight from '../types/RadarBox/LiveFlight';
+import FlightPosition from '../types/RadarBox/FlightPosition';
+import FlightInfo, { AircraftClass } from '../types/RadarBox/FlightInfo';
 
 interface SearchOptions {
     bounds?: {
@@ -12,6 +12,9 @@ interface SearchOptions {
     }
     zoom?: number;
     flightNumber?: string;
+    airport?: string;
+    aircraftClass?: AircraftClass;
+    airline?: string;
 }
 
 export default class FlightData {
@@ -21,17 +24,18 @@ export default class FlightData {
     selectedFlightInfo?: FlightInfo;
     selectedFlightPositions?: FlightPosition[];
 
+    updater?: NodeJS.Timer;
+
     private options?: SearchOptions;
 
     private constructor(data: LiveFlight[], options?: SearchOptions) {
         this.data = data;
         this.options = options;
-        // if (options.)
     }
 
     static async init(options?: SearchOptions) {
         const data = await this.getLiveFlights(options);
-        return new FlightData(data, options);
+        return data.length ? new FlightData(data, options) : null;
     }
 
     async update() {
@@ -44,7 +48,8 @@ export default class FlightData {
             ]);
 
             this.selectedFlightPositions = positions;
-            this.selectedFlightInfo = info;
+            if (info)
+                this.selectedFlightInfo = info;
         }
         
         this.data = await liveFlightsReq;
@@ -52,6 +57,12 @@ export default class FlightData {
         if (this.selectedFlightId)
             this.selectedFlightLive = this.data.find(flight => flight.id === this.selectedFlightId);
     }
+
+    startUpdate(interval = 6000) {
+        this.updater = setInterval(() => this.update(), interval);
+    }
+
+    stopUpdate = () => clearInterval(this.updater);
 
     async selectId(id: string) {
         this.selectedFlightId = id;
@@ -61,18 +72,13 @@ export default class FlightData {
     private static async getLiveFlights(options?: SearchOptions) {
         const rawParams: { [key: string]: string } = {
             // aircraft: '',
-            // airport: '',
-            // fn: '',
             // far: '',
             // fms: '',
-            // zoom: '13',
             // flightid: '',
-            // route: '',
-            // bounds: '90,180,-90,-180',
             // designator: 'iata',
             // showLastTrails: 'true',
             // tz: 'local',
-            vehicles: 'true',
+            // vehicles: 'true',
             // ff: 'false',
             // os: 'web',
             adsb: 'true',
@@ -112,22 +118,28 @@ export default class FlightData {
 
             if (options.flightNumber)
                 rawParams.fn = options.flightNumber;
+
+            if (options.airport)
+                rawParams.airport = options.airport;
+
+            if (options.airline)
+                rawParams.airline = options.airline;
+
+            if (options.aircraftClass)
+                rawParams['class[]'] = options.aircraftClass;
         }
 
         const params = new URLSearchParams(rawParams);
     
         const data: LiveFlight[] = await fetch(`https://data.rb24.com/live?${params.toString()}`, {
-            "headers": {
-                "Origin": "https://www.radarbox.com"
+            'headers': {
+                'Origin': 'https://www.radarbox.com'
             },
-            "method": "GET"
+            'method': 'GET'
         }).then(async res => {
             const raw = await res.json();
             // console.log(raw)
-            return Object.entries(raw[0]).map(([id, info]: [string, any]) => {
-                // if (info[0] === 'QR8981')
-                //     console.log(info)
-    
+            return Object.entries(raw[0]).map(([id, info]: [string, any]) => {    
                 const keys = [
                     'flightNumber', 'latitude', 'longitude', 'timestamp', 
                     'altitude', 'model', 'groundSpeed', 'heading', 
@@ -165,7 +177,7 @@ export default class FlightData {
                 if (obj.imageSlug.length > 0)
                     obj.imageUrl = 'https://cdn.radarbox.com/photo/' + obj.imageSlug;
 
-                obj.airlineImageUrl = `https://cdn.radarbox.com/airlines/sq/${obj.airline}.png`;
+                obj.airlineImageUrl = obj.airline.length ? `https://cdn.radarbox.com/airlines/sq/${obj.airline}.png` : undefined;
     
                 delete obj.actualDeparture;
                 delete obj.estimatedArrival;
@@ -185,16 +197,18 @@ export default class FlightData {
     static async getLiveFlight(flightNumber: string) {
         const options = { flightNumber };
         const data = await this.getLiveFlights(options);
+        if (!data.length)
+            return null;
         const flightData = new FlightData(data, options);
         await flightData.selectId(data[0].id);
         return flightData;
     }
 
     private static getFlightPositions = async (id: string): Promise<FlightPosition[]> => fetch('https://data.rb24.com/live-route?fid=' + id, {
-        "headers": {
-            "Origin": "https://www.radarbox.com"
+        'headers': {
+            'Origin': 'https://www.radarbox.com'
         },
-        "method": "GET"
+        'method': 'GET'
     }).then(async res => {
         const { pos } = await res.json();
         return Object.entries(pos)
@@ -209,13 +223,17 @@ export default class FlightData {
             }));
     });
 
-    private static getFlightInfo = async (id: string): Promise<FlightInfo> => fetch('https://data.rb24.com/live-flight-info?fid=' + id, {
-        "headers": {
-            "Origin": "https://www.radarbox.com"
+    private static getFlightInfo = async (id: string): Promise<FlightInfo | null> => fetch('https://data.rb24.com/live-flight-info?fid=' + id, {
+        'headers': {
+            'Origin': 'https://www.radarbox.com'
         },
-        "method": "GET"
+        'method': 'GET'
     }).then(async res => {
+        if (res.status !== 200)
+            return null;
         const raw = await res.json();
+        if (!raw)
+            return null;
         // return raw;
         return {
             id: raw.fid,
@@ -244,13 +262,13 @@ export default class FlightData {
                 longitude: raw.stconlo,
                 distance: raw.stdis
             },
-            airline: {
+            airline: raw.alic ? {
                 icao: raw.alic,
                 iata: raw.alia,
                 name: raw.alna,
-                imageUrl: `https://cdn.radarbox.com/airlines/sq/${raw.icao}.png`
-            },
-            origin: {
+                imageUrl: `https://cdn.radarbox.com/airlines/sq/${raw.alic}.png`
+            } : undefined,
+            origin: raw.aporgna ? {
                 latitude: raw.aporgla,
                 longitude: raw.aporglo,
                 icao: raw.aporgic,
@@ -260,8 +278,8 @@ export default class FlightData {
                 terminal: raw.depterm,
                 gate: raw.depgate,
                 runway: raw.tkorw
-            },
-            destination: {
+            } : undefined,
+            destination: raw.apdstna ? {
                 latitude: raw.apdstla,
                 longitude: raw.apdstlo,
                 icao: raw.apdstic,
@@ -271,11 +289,11 @@ export default class FlightData {
                 terminal: raw.arrterm,
                 gate: raw.arrgate,
                 runway: raw.lngrw
-            },
+            } : undefined,
             aircraft: {
                 icao: raw.act,
                 name: raw.acd,
-                unknown: raw.accl,
+                class: raw.accl,
                 registration: raw.acr,
                 icao24BitAddress: raw.ms,
                 serialNumber: raw.accn,
@@ -283,8 +301,14 @@ export default class FlightData {
                 firstFlight: raw.acffdate,
                 country: raw.accountry
             },
-            times: {
-                departure: {
+            times: (
+                (
+                    raw.deps || raw.depe || raw.depa
+                ) || (
+                    raw.arrs || raw.arre || raw.arra
+                )
+            ) ? {
+                departure: (raw.deps || raw.depe || raw.depa) ? {
                     scheduled: raw.deps,
                     estimated: raw.depe,
                     actual: raw.depa,
@@ -294,8 +318,8 @@ export default class FlightData {
                         long: raw.aporgtznl,
                         offset: raw.aporgtz
                     }
-                },
-                arrival: {
+                } : undefined,
+                arrival: (raw.arrs || raw.arre || raw.arra) ? {
                     scheduled: raw.arrs,
                     estimated: raw.arre,
                     actual: raw.arra,
@@ -305,23 +329,33 @@ export default class FlightData {
                         long: raw.apdsttznl,
                         offset: raw.apdsttz
                     }
-                },
+                } : undefined,
                 duration: raw.duration,
                 delay: raw.delayed
-            },
+            } : undefined,
             status: raw.status,
             distance: raw.distance,
             ground: !!raw.ground,
             fir: raw.fir,
-            daysOfOperation: raw.dooperation.map((n: number) => n - 1),
+            daysOfOperation: raw.dooperation ? raw.dooperation.map((n: number) => n - 1) : undefined,
             seatMap: raw.seatmaps ? {
                 link: raw.seatmaps.link,
                 isWideBody: raw.seatmaps.isWideBody === '1',
                 configuration: (() => {
-                    const [ firstClass, business, premium, economy ] = raw.seatmaps.seatsConf.split('|');
-                    return { firstClass, business, premium, economy };
+                    const [ first, business, premium, economy ] = raw.seatmaps.seatsConf.split('|');
+                    return { first, business, premium, economy };
                 })()
             } : undefined
         };
     });
+
+    async getAllFlightInfo() {
+        const chunkyData = _.chunk(this.data, 10);
+
+        const chunks = [];
+        for (let chunk of chunkyData)
+            chunks.push(...await Promise.all(chunk.map(flight => FlightData.getFlightInfo(flight.id))));
+
+        return chunks.filter((f): f is FlightInfo => f !== null);
+    }
 }

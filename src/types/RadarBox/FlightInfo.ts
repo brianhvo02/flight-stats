@@ -4,7 +4,7 @@ export default interface FlightInfo {
     longitude: number;
     timestamp: Date;
     callsign: string;
-    flightNumber: string;
+    flightNumber?: string;
     images: {
         source: string;
         sourceUrl: string;
@@ -12,7 +12,7 @@ export default interface FlightInfo {
     }[]
     route?: string;
     altitude: number;
-    squawkCode: number;
+    squawkCode?: number;
     heading: number;
     groundSpeed: number;
     progress?: number;
@@ -25,41 +25,41 @@ export default interface FlightInfo {
         longitude?: number;
         distance?: number;
     }
-    airline: {
+    airline?: {
         icao: string;
-        iata: string;
+        iata?: string;
         name: string;
         imageUrl: string;
     }
-    origin: Airport;
-    destination: Airport;
+    origin?: Airport;
+    destination?: Airport;
     aircraft: {
         icao: string;
         name: string;
-        unknown: string;
+        class?: AircraftClass;
         registration: string;
         icao24BitAddress: string;
-        serialNumber: string;
-        age: string;
-        firstFlight: string;
-        country: string;
+        serialNumber?: string;
+        age?: string;
+        firstFlight?: string;
+        country?: string;
     };
-    times: {
-        departure: Times;
-        arrival: Times;
-        duration: string;
+    times?: {
+        departure?: Times;
+        arrival?: Times;
+        duration?: string;
         delay?: number;
     };
-    status: string;
-    distance: number;
+    status?: string;
+    distance?: number;
     ground: boolean;
     fir: string;
-    daysOfOperation: DaysOfOperation[];
+    daysOfOperation?: DaysOfOperation[];
     seatMap?: {
         link: string;
         isWideBody: boolean;
         configuration: { 
-            firstClass: number; 
+            first: number; 
             business: number; 
             premium: number; 
             economy: number;
@@ -80,9 +80,9 @@ interface Airport {
 }
 
 interface Times {
-    scheduled: string;
-    estimated: string;
-    actual: string;
+    scheduled?: string;
+    estimated?: string;
+    actual?: string;
     relative: string;
     timezone: {
         short: string;
@@ -99,4 +99,13 @@ enum DaysOfOperation {
     'THU',
     'FRI',
     'SAT'
+}
+
+export enum AircraftClass {
+    'AIRLINER' = 'A',
+    'CARGO' = 'AC',
+    'BUSINESS JET' = 'B',
+    'GENERAL AVIATION' = 'G',
+    'HELICOPTER' = 'HG',
+    'MILITARY' = 'M'
 }

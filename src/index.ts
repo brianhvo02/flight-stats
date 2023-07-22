@@ -1,9 +1,10 @@
-import _ from 'lodash';
+// import _ from 'lodash';
 // import FlightData from './FlightRadar24/FlightData';
-import FlightData from './RadarBox/FlightData';
-import { viewport, bounds } from '@mapbox/geo-viewport';
+// import FlightData from './RadarBox/FlightData';
+// import { viewport, bounds } from '@mapbox/geo-viewport';
+// import FlightInfo, { AircraftClass } from './types/RadarBox/FlightInfo';
 
-(async () => {
+// (async () => {
     // const flightData = await FlightData.init('northamerica/na_c/na_cla');
     // const feed = await flightData.getFeed();
     // const flight = await FlightData.getFlight(feed[0].id);
@@ -31,19 +32,44 @@ import { viewport, bounds } from '@mapbox/geo-viewport';
     // const [lon1, lat1, lon2, lat2] = bounds([-121.91385, 37.34807], 9, [3840, 2160], 512);
 
     // const flightData = await FlightData.init({
-    //     bounds: { lat1, lon1, lat2, lon2 },
-    //     zoom: 14
+        // bounds: { lat1, lon1, lat2, lon2 },
+        // zoom: 14,
+        // airport: 'KSFO',
+        // aircraftClass: AircraftClass.MILITARY
+        // airline: 'DAL'
     // });
 
-    // await flightData.selectId(flightData.data[10].id);
+    // const flightData = await FlightData.getLiveFlight('MP6161');
 
-    // console.log(flightData.selectedFlightLive);
-    const flightData = await FlightData.getLiveFlight('AS41');
-    console.log(flightData.selectedFlightInfo)
+    // if (flightData) {
+        // console.log(flightData.data.length)
+        // const chunks = await flightData.getAllFlightInfo();
+        // console.table(flightData.data.map(f => _.pick(f, ['id', 'flightNumber', 'airline', 'model'])));
+        // console.table(_.countBy(chunks.map(f => f.airline), 'name'));
+        // console.table(chunks.map(f => ({
+        //     ..._.pick(f, ['id', 'flightNumber', 'progress', 'altitude']),
+        //     airline: f.airline?.name,
+        //     origin: f.origin?.city,
+        //     destination: f.destination?.city,
+        //     aircraft: f.aircraft.icao
+        // })));
+        // await flightData.selectId('2002902353');
+        // console.log(flightData.selectedFlightInfo)
+        // await flightData.selectId(flightData.data[0].id);
+        // console.log(flightData.selectedFlightLive?.flightNumber)
+        // console.log(flightData.selectedFlightInfo?.latitude, flightData.selectedFlightInfo?.longitude);
+        // flightData.startUpdate(6000);
+    // }
+
+    
+    
+    // const flightData = await FlightData.getLiveFlight('K49700');
+    // if (flightData)
+    //     console.log(flightData.selectedFlightInfo)
 
     // const flight = flightData.data.find(x => x.flightNumber === 'AS3305');
     // await flightData.update();
     // console.log(flightData.data.find(x => x.flightNumber === 'WN1317'));
     
     // console.log(`https://www.google.com/maps/search/?api=1&query=${data[0].latitude},${data[0].longitude}`)
-})();
+// })();

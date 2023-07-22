@@ -33,7 +33,7 @@ export default interface LiveFlight {
     aircraftStatus: string | null;
     squawk: number | '';
     imageUrl?: string;
-    airlineImageUrl: string;
+    airlineImageUrl?: string;
     divertedAirport: string | null;
     estimatedDistanceRemaining: number | null;
     estimatedTimeRemaining: string | null;
