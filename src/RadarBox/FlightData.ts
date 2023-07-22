@@ -1,6 +1,7 @@
 import _, { keys } from "lodash";
-import LiveFlight from "../types/RadarBox/flight";
-import FlightRoute from "../types/RadarBox/route";
+import LiveFlight from "../types/RadarBox/LiveFlight";
+import FlightPosition from "../types/RadarBox/FlightPosition";
+import FlightInfo from "../types/RadarBox/FlightInfo";
 
 interface SearchOptions {
     bounds?: {
@@ -10,17 +11,22 @@ interface SearchOptions {
         lon2: number;
     }
     zoom?: number;
+    flightNumber?: string;
 }
 
 export default class FlightData {
     data: LiveFlight[];
+    selectedFlightId?: string;
+    selectedFlightLive?: LiveFlight;
+    selectedFlightInfo?: FlightInfo;
+    selectedFlightPositions?: FlightPosition[];
 
     private options?: SearchOptions;
-    private selectedId?: string;
 
     private constructor(data: LiveFlight[], options?: SearchOptions) {
         this.data = data;
         this.options = options;
+        // if (options.)
     }
 
     static async init(options?: SearchOptions) {
@@ -29,12 +35,27 @@ export default class FlightData {
     }
 
     async update() {
-        const data = await FlightData.getLiveFlights(this.options);
-        this.data = data;
+        const liveFlightsReq = FlightData.getLiveFlights(this.options);
+
+        if (this.selectedFlightId) {
+            const [ positions, info ] = await Promise.all([
+                FlightData.getFlightPositions(this.selectedFlightId),
+                FlightData.getFlightInfo(this.selectedFlightId)
+            ]);
+
+            this.selectedFlightPositions = positions;
+            this.selectedFlightInfo = info;
+        }
+        
+        this.data = await liveFlightsReq;
+        
+        if (this.selectedFlightId)
+            this.selectedFlightLive = this.data.find(flight => flight.id === this.selectedFlightId);
     }
 
-    selectId(id: string) {
-        this.selectedId = id;
+    async selectId(id: string) {
+        this.selectedFlightId = id;
+        await this.update();
     }
 
     private static async getLiveFlights(options?: SearchOptions) {
@@ -86,14 +107,16 @@ export default class FlightData {
             if (options.bounds)
                 rawParams.bounds = `${options.bounds.lat2},${options.bounds.lon2},${options.bounds.lat1},${options.bounds.lon1}`;
 
-            if (options.zoom) {
+            if (options.zoom)
                 rawParams.zoom = options.zoom.toString();
-            }
+
+            if (options.flightNumber)
+                rawParams.fn = options.flightNumber;
         }
 
         const params = new URLSearchParams(rawParams);
     
-        const data = await fetch(`https://data.rb24.com/live?${params.toString()}`, {
+        const data: LiveFlight[] = await fetch(`https://data.rb24.com/live?${params.toString()}`, {
             "headers": {
                 "Origin": "https://www.radarbox.com"
             },
@@ -159,7 +182,15 @@ export default class FlightData {
         return data;
     }
 
-    static getRoute = async (id: string): Promise<FlightRoute[]> => fetch('https://data.rb24.com/live-route?fid=' + id, {
+    static async getLiveFlight(flightNumber: string) {
+        const options = { flightNumber };
+        const data = await this.getLiveFlights(options);
+        const flightData = new FlightData(data, options);
+        await flightData.selectId(data[0].id);
+        return flightData;
+    }
+
+    private static getFlightPositions = async (id: string): Promise<FlightPosition[]> => fetch('https://data.rb24.com/live-route?fid=' + id, {
         "headers": {
             "Origin": "https://www.radarbox.com"
         },
@@ -176,5 +207,121 @@ export default class FlightData {
                 speed: parseInt(data[3]) || 0,
                 source: data[4]
             }));
+    });
+
+    private static getFlightInfo = async (id: string): Promise<FlightInfo> => fetch('https://data.rb24.com/live-flight-info?fid=' + id, {
+        "headers": {
+            "Origin": "https://www.radarbox.com"
+        },
+        "method": "GET"
+    }).then(async res => {
+        const raw = await res.json();
+        // return raw;
+        return {
+            id: raw.fid,
+            latitude: raw.la,
+            longitude: raw.lo,
+            timestamp: new Date(raw.svd),
+            callsign: raw.cs,
+            flightNumber: raw.fnia,
+            images: raw.phs.map((ph: any) => ({
+                source: ph.ph,
+                sourceUrl: ph.phu,
+                url: 'https://cdn.radarbox.com/photo/' + ph.th
+            })),
+            route: raw.route,
+            altitude: raw.alt,
+            squawkCode: raw.sq,
+            heading: raw.hd,
+            groundSpeed: raw.gs,
+            progress: raw.pr,
+            source: {
+                type: raw.so,
+                station: raw.st,
+                city: raw.stci,
+                country: raw.stco,
+                latitude: raw.stconla,
+                longitude: raw.stconlo,
+                distance: raw.stdis
+            },
+            airline: {
+                icao: raw.alic,
+                iata: raw.alia,
+                name: raw.alna,
+                imageUrl: `https://cdn.radarbox.com/airlines/sq/${raw.icao}.png`
+            },
+            origin: {
+                latitude: raw.aporgla,
+                longitude: raw.aporglo,
+                icao: raw.aporgic,
+                iata: raw.aporgia,
+                name: raw.aporgna,
+                city: raw.aporgci,
+                terminal: raw.depterm,
+                gate: raw.depgate,
+                runway: raw.tkorw
+            },
+            destination: {
+                latitude: raw.apdstla,
+                longitude: raw.apdstlo,
+                icao: raw.apdstic,
+                iata: raw.apdstia,
+                name: raw.apdstna,
+                city: raw.apdstci,
+                terminal: raw.arrterm,
+                gate: raw.arrgate,
+                runway: raw.lngrw
+            },
+            aircraft: {
+                icao: raw.act,
+                name: raw.acd,
+                unknown: raw.accl,
+                registration: raw.acr,
+                icao24BitAddress: raw.ms,
+                serialNumber: raw.accn,
+                age: raw.acff,
+                firstFlight: raw.acffdate,
+                country: raw.accountry
+            },
+            times: {
+                departure: {
+                    scheduled: raw.deps,
+                    estimated: raw.depe,
+                    actual: raw.depa,
+                    relative: raw.departureRelative,
+                    timezone: {
+                        short: raw.aporgtzns,
+                        long: raw.aporgtznl,
+                        offset: raw.aporgtz
+                    }
+                },
+                arrival: {
+                    scheduled: raw.arrs,
+                    estimated: raw.arre,
+                    actual: raw.arra,
+                    relative: raw.arrivalRelative,
+                    timezone: {
+                        short: raw.apdsttzns,
+                        long: raw.apdsttznl,
+                        offset: raw.apdsttz
+                    }
+                },
+                duration: raw.duration,
+                delay: raw.delayed
+            },
+            status: raw.status,
+            distance: raw.distance,
+            ground: !!raw.ground,
+            fir: raw.fir,
+            daysOfOperation: raw.dooperation.map((n: number) => n - 1),
+            seatMap: raw.seatmaps ? {
+                link: raw.seatmaps.link,
+                isWideBody: raw.seatmaps.isWideBody === '1',
+                configuration: (() => {
+                    const [ firstClass, business, premium, economy ] = raw.seatmaps.seatsConf.split('|');
+                    return { firstClass, business, premium, economy };
+                })()
+            } : undefined
+        };
     });
 }

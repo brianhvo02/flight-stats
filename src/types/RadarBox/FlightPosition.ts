@@ -1,4 +1,4 @@
-export default interface FlightRoute {
+export default interface FlightPosition {
     timestamp: Date;
     latitude: number;
     longitude: number;

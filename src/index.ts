@@ -28,15 +28,20 @@ import { viewport, bounds } from '@mapbox/geo-viewport';
     // })));
 
     // console.log(viewport([-122.033, 37.314, -121.813, 37.405], [3840, 2160], 2, 23, 512, true));
-    const [lon1, lat1, lon2, lat2] = bounds([-121.91385, 37.34807], 9, [3840, 2160], 512);
+    // const [lon1, lat1, lon2, lat2] = bounds([-121.91385, 37.34807], 9, [3840, 2160], 512);
 
-    const flightData = await FlightData.init({
-        bounds: { lat1, lon1, lat2, lon2 },
-        zoom: 14
-    });
-    const flight = flightData.data.find(x => x.flightNumber === 'DL933');
-    if (flight)
-        console.log(await FlightData.getRoute(flight.id));
+    // const flightData = await FlightData.init({
+    //     bounds: { lat1, lon1, lat2, lon2 },
+    //     zoom: 14
+    // });
+
+    // await flightData.selectId(flightData.data[10].id);
+
+    // console.log(flightData.selectedFlightLive);
+    const flightData = await FlightData.getLiveFlight('AS41');
+    console.log(flightData.selectedFlightInfo)
+
+    // const flight = flightData.data.find(x => x.flightNumber === 'AS3305');
     // await flightData.update();
     // console.log(flightData.data.find(x => x.flightNumber === 'WN1317'));
     
