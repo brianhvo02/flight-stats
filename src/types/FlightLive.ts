@@ -11,7 +11,7 @@ export enum InfoSource {
     'AUST'
 }
 
-export default interface LiveFlight {
+export default interface FlightLive {
     id: string;
     flightNumber: string;
     latitude: number;

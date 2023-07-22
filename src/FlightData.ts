@@ -1,7 +1,7 @@
 import _, { keys } from 'lodash';
-import LiveFlight from '../types/RadarBox/LiveFlight';
-import FlightPosition from '../types/RadarBox/FlightPosition';
-import FlightInfo, { AircraftClass } from '../types/RadarBox/FlightInfo';
+import LiveFlight from './types/FlightLive';
+import FlightPosition from './types/FlightPosition';
+import FlightInfo, { AircraftClass } from './types/FlightInfo';
 
 interface SearchOptions {
     bounds?: {
