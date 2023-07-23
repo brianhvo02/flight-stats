@@ -1,0 +1,56 @@
+.flight-show {
+    max-width: 50rem;
+
+    header {
+        display: flex;
+        align-items: center;
+        margin: 1rem 0;
+        
+        img {
+            height: auto;
+            max-height: 3rem;
+            max-width: 15rem;
+            margin-left: 1rem;
+        }
+    }
+
+    article {
+        margin-bottom: 1rem;
+
+        section {
+            margin-bottom: 0.75rem;
+    
+            p {
+                span {
+                    margin-left: 0.5rem;
+                }
+            }
+    
+            .route {
+                overflow-x: scroll;
+                overflow-y: hidden;
+            }
+        }
+    
+        .airport-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+    }
+
+    .origin-destination {
+        display: flex;
+
+        article {
+            flex: 1;
+
+            section > span {
+                display: block;
+            }
+        }
+
+        article:nth-child(2) {
+            text-align: right;
+        }
+    }
+}

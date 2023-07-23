@@ -1,0 +1,36 @@
+table {
+    width: 100%;
+    text-align: left;
+
+    thead, tr:nth-child(2n) {
+        background-color: #BCD2E8;
+    }
+
+    tbody > tr:hover {
+        background-color: #91BAD6;
+        cursor: pointer;
+    }
+
+    th:hover {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    th, td {
+        padding: 0.5rem 1rem;
+        vertical-align: middle;
+
+        img {
+            max-height: 3rem;
+        }
+    }    
+}
+
+.flight-number {
+    display: flex;
+    align-items: center;
+
+    span {
+        margin-left: 1rem;
+    }
+}

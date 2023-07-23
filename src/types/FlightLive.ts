@@ -16,7 +16,7 @@ export default interface FlightLive {
     flightNumber: string;
     latitude: number;
     longitude: number;
-    timestamp: Date;
+    timestamp: number;
     altitude: number | null;
     model: string;
     groundSpeed: number | '';

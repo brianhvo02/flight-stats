@@ -2,7 +2,7 @@ export default interface FlightInfo {
     id: string;
     latitude: number;
     longitude: number;
-    timestamp: Date;
+    timestamp: number;
     callsign: string;
     flightNumber?: string;
     images: {
@@ -43,6 +43,7 @@ export default interface FlightInfo {
         age?: string;
         firstFlight?: string;
         country?: string;
+        countryFlagImageUrl?: string;
     };
     times?: {
         departure?: Times;
@@ -102,10 +103,10 @@ enum DaysOfOperation {
 }
 
 export enum AircraftClass {
-    'AIRLINER' = 'A',
-    'CARGO' = 'AC',
-    'BUSINESS JET' = 'B',
-    'GENERAL AVIATION' = 'G',
-    'HELICOPTER' = 'HG',
-    'MILITARY' = 'M'
+    AIRLINER = 'A',
+    CARGO = 'AC',
+    BUSINESS_JET = 'B',
+    GENERAL_AVIATION = 'G',
+    HELICOPTER = 'HG',
+    MILITARY = 'M'
 }
