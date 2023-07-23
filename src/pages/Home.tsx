@@ -11,7 +11,7 @@ const Home = () => {
     const { data, isLoading } = useGetLiveFlightsQuery({
         airport: 'KSFO'
     }, {
-        pollingInterval: 6000
+        pollingInterval: 5000
     });
 
     const handleClick = (e: MouseEvent<HTMLTableRowElement>) => navigate('/flights/' + e.currentTarget.id);

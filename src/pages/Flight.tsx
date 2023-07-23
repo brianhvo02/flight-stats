@@ -2,12 +2,46 @@ import './Flight.scss'
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGetFlightInfoQuery } from '../store/flightData';
 import { skipToken } from '@reduxjs/toolkit/dist/query';
+import DeckGLMap from '../DeckGLMap';
+import { ScenegraphLayer } from '@deck.gl/mesh-layers/typed';
+import FlightInfo from '../types/FlightInfo';
+import { MapRef } from 'react-map-gl';
+import { useEffect, useRef } from 'react';
 
 const Flight = () => {
     const navigate = useNavigate();
     const { flightId } = useParams();
     const { data, isLoading } = useGetFlightInfoQuery(flightId ?? skipToken, {
-        pollingInterval: 6000
+        pollingInterval: 5000
+    });
+
+    const mapRef = useRef<MapRef>(null);
+
+    useEffect(() => {
+        if (data)
+            mapRef.current?.easeTo({
+                center: [data.longitude, data.latitude],
+                pitch: 45,
+                zoom: 7,
+                bearing: data.heading - 90
+            });
+    }, [data]);
+
+    const layer = new ScenegraphLayer({
+        id: 'scenegraph-layer',
+        data: data && [data],
+        // pickable: true,
+        scenegraph: 'https://raw.githubusercontent.com//Flightradar24/fr24-3d-models/master/models/a321.glb',
+        getPosition: (f: FlightInfo) => [f.longitude, f.latitude, f.altitude],
+        getOrientation: (f: FlightInfo) => [0, -f.heading, 90],
+        _animations: {
+          '*': { speed: 1 }
+        },
+        sizeScale: 500,
+        _lighting: 'pbr',
+        transitions: {
+            getPosition: 5000 * 0.9
+        }
     });
 
     if (isLoading)
@@ -84,6 +118,21 @@ const Flight = () => {
                 </article>
             }
             </div>
+            <DeckGLMap
+                style={{
+                    width: '100%',
+                    height: 400
+                }}
+                viewState={{
+                    latitude: data.latitude,
+                    longitude: data.longitude,
+                    pitch: 45,
+                    zoom: 7,
+                    bearing: data.heading - 90
+                }}
+                layers={[layer]}
+                mapRef={mapRef}
+            />
             <article>
                 <h2>Transponder Info</h2>
                 <section>
